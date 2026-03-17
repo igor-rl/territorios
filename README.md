@@ -16,3 +16,15 @@ npm run tauri dev
 
 For Android development, run:
 npm run tauri android dev
+
+Comandos úteis:
+
+```cmd
+git add . && git commit -m "release pipeline" && git push
+```
+
+Versionar e gerar executaveis de instalação
+
+```cmd
+git tag v1.0.3 && git push origin v1.0.3
+```
