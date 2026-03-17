@@ -1,0 +1,70 @@
+{
+  "name": "prompts",
+  "dockerComposeFile": ["../docker-compose.yaml"],
+  "service": "node",
+  "workspaceFolder": "/app",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": { "version": "latest" },
+    "ghcr.io/devcontainers/features/github-cli:1": { "version": "latest" },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false,
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mhutchie.git-graph",
+        "GitHub.vscode-pull-request-github",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "biomejs.biome",
+        "vivaxy.vscode-conventional-commits",
+        "firsttris.vscode-jest-runner",
+        "orta.vscode-jest",
+        "humao.rest-client",
+        "rangav.vscode-thunder-client",
+        "ms-vscode.vscode-typescript-next",
+        "christian-kohler.npm-intellisense",
+        "ms-azuretools.vscode-docker",
+        "cweijan.vscode-database-client2",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "pranaygp.vscode-css-peek",
+        "bradlc.vscode-tailwindcss",
+        "wmaurer.change-case",
+        "PKief.material-icon-theme",
+        "aaron-bond.better-comments",
+        "usernamehw.errorlens"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": { "path": "/bin/zsh" }
+        },
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "git.autofetch": true,
+        "git.enableSmartCommit": true,
+        "explorer.fileNesting.enabled": true,
+        "explorer.fileNesting.patterns": {
+          "*.ts": "${capture}.test.ts, ${capture}.spec.ts",
+          "package.json": "package-lock.json, pnpm-lock.yaml, .npmrc, .nvmrc"
+        }
+      }
+    }
+  },
+  "mounts": [
+    "source=${localEnv:SSH_AUTH_SOCK},target=/tmp/vscode-ssh-auth.sock,type=bind,readonly"
+  ]
+}

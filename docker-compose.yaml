@@ -1,0 +1,8 @@
+services:
+  node:
+    build: .
+    container_name: territory-manager
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
