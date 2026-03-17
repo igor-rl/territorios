@@ -6,6 +6,8 @@
 <title>Sistema de Territórios S-12-T</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@300;400;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -583,6 +585,7 @@ input.filled{background:#eaf3ed;border-color:var(--green)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script>
 // ═══════════════════════════════════════════════════
 // SISTEMA DE AUTENTICAÇÃO (localStorage)
@@ -821,10 +824,11 @@ function proceedToApp() {
 // ═══════════════════════════════════════════════════
 // MAPA
 // ═══════════════════════════════════════════════════
-const map = L.map('map', {zoomControl:true}).setView([-15.0, -44.0], 6);
+const map = L.map('map', {zoomControl:true, preferCanvas:true}).setView([-15.0, -44.0], 6);
 
-const _layerMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+const _layerMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
+  subdomains: 'abcd',
   maxZoom: 19
 });
 
@@ -894,8 +898,14 @@ const PIN_COLORS = [
   '#0e6655','#7d3c98','#1a5276','#117a65','#cb4335'
 ];
 let communities = [], selectedComm = null, activeMarker = null;
-const jwLayer  = L.featureGroup().addTo(map); // camada do polígono JW Hub — embaixo
-const commLayer = L.featureGroup().addTo(map);
+const jwLayer  = L.featureGroup({renderer: L.canvas()}).addTo(map); // camada do polígono JW Hub — embaixo
+const commLayer = L.markerClusterGroup({
+  maxClusterRadius: 40,
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: false,
+  zoomToBoundsOnClick: true,
+  disableClusteringAtZoom: 14
+}).addTo(map);
 
 
 // ═══════════════════════════════════════════════════
@@ -961,7 +971,7 @@ function renderMarkers() {
   commLayer.clearLayers();
   communities.forEach((c, i) => {
     c.index = i;
-    c.marker = L.marker([c.lat, c.lng], { icon: makeIcon(false, c.color) });
+    c.marker = L.marker([c.lat, c.lng], { icon: makeIcon(false, c.color), riseOnHover: false });
     c.marker.bindTooltip(`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c.color};margin-right:5px;vertical-align:middle"></span><b>${c.name}</b>`, { direction: 'top', offset: [0, -30] });
     c.marker.on('click', () => selectCommunity(i));
     commLayer.addLayer(c.marker);
@@ -1058,6 +1068,7 @@ function clearSelection() {
 // DESENHO DE ÁREA
 // ═══════════════════════════════════════════════════
 const drawn = new L.FeatureGroup().addTo(map);
+const _canvasRenderer = L.canvas({ padding: 0.5 });
 const state = { cards: [], colors: ['#1a7a4e','#27ae60','#2980b9','#8e44ad','#e67e22','#c0392b','#16a085','#2c3e50','#d35400','#1e8bc3'] };
 let drawCtrl = null;
 
@@ -1106,8 +1117,15 @@ async function finishArea(layer) {
 
   const houseLayer = L.featureGroup();
   housePts.forEach(p => {
-    L.circleMarker([p.lat, p.lng], { radius:4, color:'#c0392b', fillColor:'#e74c3c', fillOpacity:.85, weight:1.5 })
-     .bindTooltip('🏠 Edificação',{direction:'top'}).addTo(houseLayer);
+    L.circleMarker([p.lat, p.lng], {
+      radius: 3,
+      color: '#c0392b',
+      fillColor: '#e74c3c',
+      fillOpacity: .85,
+      weight: 1,
+      renderer: _canvasRenderer,
+      interactive: false   // sem eventos = muito mais rápido
+    }).addTo(houseLayer);
   });
   houseLayer.addTo(map);
 
@@ -1136,7 +1154,7 @@ async function queryHousesInPolygon(latlngs, bounds) {
   try {
     const s=bounds.getSouth().toFixed(5),w=bounds.getWest().toFixed(5);
     const n=bounds.getNorth().toFixed(5),e=bounds.getEast().toFixed(5);
-    const query=`[out:json][timeout:15];
+    const query=`[out:json][timeout:45];
 (node["building"](${s},${w},${n},${e});
  node["place"~"house|farm|isolated_dwelling|hamlet"](${s},${w},${n},${e});
  way["building"](${s},${w},${n},${e});)->.all;
@@ -1207,8 +1225,8 @@ function fetchTileRaw(z, tx, ty, tileType) {
   if(tileType === 'satellite'){
     url=`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`;
   } else {
-    const sub=['a','b','c'][(tx+ty)%3];
-    url=`https://${sub}.tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
+    const sub2=['a','b','c','d'][(tx+ty)%4];
+    url=`https://${sub2}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${tx}/${ty}.png`;
   }
   const p=new Promise(res=>{
     const img=new Image(); img.crossOrigin='anonymous';
