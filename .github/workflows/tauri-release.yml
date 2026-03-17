@@ -1,4 +1,4 @@
-name: Build Tauri App
+name: Build and Release Tauri App
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Tauri app
+      - name: Build Tauri
         run: npm run tauri build
 
       - name: Upload artifacts
@@ -40,3 +40,21 @@ jobs:
         with:
           name: tauri-${{ matrix.platform }}
           path: src-tauri/target/release/bundle
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            **/*.msi
+            **/*.exe
+            **/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
