@@ -17,6 +17,10 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
 
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +46,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tauri-${{ matrix.platform }}
-          path: src-tauri/target/release/bundle
+          path: |
+            src-tauri/target/release/bundle/**/*.dmg
+            src-tauri/target/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.exe
+            src-tauri/target/release/bundle/**/*.sig
+            src-tauri/target/release/bundle/**/latest.json
 
   release:
     needs: build
@@ -58,5 +67,7 @@ jobs:
             **/*.dmg
             **/*.msi
             **/*.exe
+            **/*.sig
+            **/latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
