@@ -20,11 +20,11 @@ npm run tauri android dev
 Comandos úteis:
 
 ```cmd
-git add . && git commit -m "release pipeline" && git push
+git add . && git commit -m "chore" && git push
 ```
 
 Versionar e gerar executaveis de instalação
 
 ```cmd
-git tag v1.0.9 && git push origin v1.0.9
+git tag v1.0.10 && git push origin v1.0.10
 ```
